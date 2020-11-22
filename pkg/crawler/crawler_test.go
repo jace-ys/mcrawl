@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	fakes "github.com/jace-ys/mcrawl/pkg/crawler/fakes"
+	"github.com/jace-ys/mcrawl/pkg/crawler/fakes"
 )
 
 var (
@@ -15,7 +15,8 @@ var (
 
 func TestCrawl(t *testing.T) {
 	fetcher := fakes.NewFakeFetcher()
-	crawler := NewCrawler(fetcher, startURL, 2, false)
+	excluder := fakes.NewFakeExcluder(false)
+	crawler := NewCrawler(fetcher, excluder, startURL, 2, false)
 
 	results := crawler.Crawl()
 	assert.Equal(t, len(results), 5)
@@ -68,9 +69,19 @@ func TestCrawl(t *testing.T) {
 	}
 }
 
+func TestCrawlWithExclude(t *testing.T) {
+	fetcher := fakes.NewFakeFetcher()
+	excluder := fakes.NewFakeExcluder(true)
+	crawler := NewCrawler(fetcher, excluder, startURL, 2, false)
+
+	results := crawler.Crawl()
+	assert.Equal(t, len(results), 0)
+}
+
 func TestShouldFollow(t *testing.T) {
 	fetcher := fakes.NewFakeFetcher()
-	crawler := NewCrawler(fetcher, startURL, 2, false)
+	excluder := fakes.NewFakeExcluder(false)
+	crawler := NewCrawler(fetcher, excluder, startURL, 2, false)
 
 	tt := []struct {
 		name     string

@@ -12,8 +12,14 @@ type Fetcher interface {
 	Fetch(url string) (links []string, err error)
 }
 
+type Excluder interface {
+	// Exclude verifies if a path should be excluded from crawling
+	Exclude(path string) bool
+}
+
 type Crawler struct {
-	fetcher Fetcher
+	fetcher  Fetcher
+	excluder Excluder
 
 	startURL *urlpkg.URL
 	workers  int
@@ -24,9 +30,13 @@ type Crawler struct {
 	wg          sync.WaitGroup
 }
 
-func NewCrawler(fetcher Fetcher, startURL *urlpkg.URL, workers int, debug bool) *Crawler {
+func NewCrawler(fetcher Fetcher, excluder Excluder, startURL *urlpkg.URL, workers int, debug bool) *Crawler {
+	// Strip any trailing slash from our starting URL
+	startURL.Path = strings.TrimSuffix(startURL.Path, "/")
+
 	return &Crawler{
 		fetcher:     fetcher,
+		excluder:    excluder,
 		startURL:    startURL,
 		workers:     workers,
 		debug:       debug,
@@ -47,8 +57,8 @@ func (c *Crawler) Crawl() map[string]Result {
 	// Process results from our workers and push them into the results map
 	go c.process(results)
 
-	// Strip trailing slash and enqueue the URL to start crawling from
-	c.enqueue(strings.TrimSuffix(c.startURL.String(), "/"))
+	// Enqueue the URL to start crawling from
+	c.enqueue(c.startURL.String())
 
 	// Block until there are no more URLs to crawl
 	c.wg.Wait()
@@ -89,8 +99,8 @@ func (c *Crawler) process(results *resultsMap) {
 		// Enqueue additional work asynchronously so we don't block the results channel
 		go func(r Result) {
 			for _, link := range r.Links {
-				// Enqueue the link if it should be followed and we haven't crawled it yet
-				if c.shouldFollow(link) && !results.contains(link) {
+				// Enqueue the link if we haven't crawled it yet
+				if !results.contains(link) {
 					c.enqueue(link)
 				}
 			}
@@ -100,10 +110,12 @@ func (c *Crawler) process(results *resultsMap) {
 	}
 }
 
-// enqueue adds the given url to the queue channel
+// enqueue adds the given url to the queue channel if it should be followed
 func (c *Crawler) enqueue(url string) {
-	c.queueChan <- url
-	c.wg.Add(1)
+	if c.shouldFollow(url) {
+		c.queueChan <- url
+		c.wg.Add(1)
+	}
 }
 
 // shouldFollow returns a bool depending on whether the given URL should be crawled
@@ -123,5 +135,6 @@ func (c *Crawler) shouldFollow(url string) bool {
 		return false
 	}
 
-	return true
+	// Test our path against the excluder
+	return !c.excluder.Exclude(u.Path)
 }
