@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
+
 	"gopkg.in/alecthomas/kingpin.v2"
+
+	"github.com/jace-ys/mcrawl/pkg/crawler"
 )
 
 var (
@@ -12,4 +16,23 @@ var (
 
 func main() {
 	kingpin.Parse()
+
+	crawler := crawler.NewCrawler(crawler.NewFakeFetcher(), *startURL, *workers, *debug)
+
+	results := crawler.Crawl()
+
+	success := 0
+	for target, result := range results {
+		if result.Err == nil {
+			fmt.Printf("%s\n", target)
+			for _, link := range result.Links {
+				fmt.Printf("  -> %s\n", link)
+			}
+
+			success++
+		}
+	}
+
+	fmt.Println("======================")
+	fmt.Printf("Unique URLs crawled: %d\n", success)
 }
