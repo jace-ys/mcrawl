@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
@@ -21,7 +22,9 @@ func main() {
 	fetcher := fetchers.NewLinksFetcher()
 	crawler := crawler.NewCrawler(fetcher, *startURL, *workers, *debug)
 
+	start := time.Now()
 	results := crawler.Crawl()
+	duration := time.Now().Sub(start).Seconds()
 
 	success := 0
 	for target, result := range results {
@@ -37,4 +40,5 @@ func main() {
 
 	fmt.Println("======================")
 	fmt.Printf("Unique URLs crawled: %d\n", success)
+	fmt.Printf("Time taken: %.3fs\n", duration)
 }
