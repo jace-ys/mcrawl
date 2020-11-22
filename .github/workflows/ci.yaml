@@ -1,0 +1,33 @@
+name: ci
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.15"
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-mcrawl-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-mcrawl-
+
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          git diff --exit-code --name-only
+
+      - name: Lint
+        run: |
+          make fmt
+          git diff --exit-code --name-only
+
+      - name: Run tests
+        run: make test
+
+      - name: Build binary
+        run: make build
