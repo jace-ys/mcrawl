@@ -1,4 +1,4 @@
-package crawler
+package fakes
 
 import "fmt"
 

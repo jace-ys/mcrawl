@@ -6,6 +6,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/jace-ys/mcrawl/pkg/crawler"
+	"github.com/jace-ys/mcrawl/pkg/fetchers"
 )
 
 var (
@@ -17,7 +18,8 @@ var (
 func main() {
 	kingpin.Parse()
 
-	crawler := crawler.NewCrawler(crawler.NewFakeFetcher(), *startURL, *workers, *debug)
+	fetcher := fetchers.NewLinksFetcher()
+	crawler := crawler.NewCrawler(fetcher, *startURL, *workers, *debug)
 
 	results := crawler.Crawl()
 
