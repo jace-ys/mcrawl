@@ -92,13 +92,13 @@ func (c *Crawler) crawl(i int) {
 
 // process reads from the results channel and spawns goroutines to enqueue additional work
 func (c *Crawler) process(results *resultsMap) {
-	for r := range c.resultsChan {
-		// Add the result to the results map if we successfully crawled the target URL
-		results.add(r)
+	for result := range c.resultsChan {
+		// Add the result to the results map
+		results.add(result)
 
 		// Enqueue additional work asynchronously so we don't block the results channel
-		go func(r Result) {
-			for _, link := range r.Links {
+		go func(result Result) {
+			for _, link := range result.Links {
 				// Enqueue the link if we haven't crawled it yet
 				if !results.contains(link) {
 					c.enqueue(link)
@@ -106,7 +106,7 @@ func (c *Crawler) process(results *resultsMap) {
 			}
 
 			c.wg.Done()
-		}(r)
+		}(result)
 	}
 }
 
@@ -120,21 +120,21 @@ func (c *Crawler) enqueue(url string) {
 
 // shouldFollow returns a bool depending on whether the given URL should be crawled
 func (c *Crawler) shouldFollow(url string) bool {
-	u, err := urlpkg.Parse(url)
+	target, err := urlpkg.Parse(url)
 	if err != nil {
 		return false
 	}
 
 	// Only follow URLs that are part of the same subdomain as our starting URL
-	if u.Host != c.startURL.Host {
+	if target.Host != c.startURL.Host {
 		return false
 	}
 
 	// Only follow URLs that have the same scheme as our starting URL
-	if u.Scheme != c.startURL.Scheme {
+	if target.Scheme != c.startURL.Scheme {
 		return false
 	}
 
 	// Test our path against the excluder
-	return !c.excluder.Exclude(u.Path)
+	return !c.excluder.Exclude(target.Path)
 }

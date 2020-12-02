@@ -83,12 +83,7 @@ func (f *LinksFetcher) fetchHTML(url string) ([]byte, error) {
 	}
 
 	// Read the response body
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return ioutil.ReadAll(resp.Body)
 }
 
 // findLinks finds all unique resolved links in the given HTML content

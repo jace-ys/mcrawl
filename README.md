@@ -91,13 +91,13 @@ The given [Makefile](Makefile) provides some basic utilities to facilitate the d
 - To run the code formatter:
 
   ```shell
-  make fmt
+  $ make fmt
   ```
 
 - To run tests:
 
   ```shell
-  make test
+  $ make test
   ```
 
 #### Release
